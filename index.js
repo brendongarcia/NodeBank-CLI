@@ -6,7 +6,7 @@ operation();
 
 function operation() {
   inquirer
-    .prompt([
+    .prompt([     
       {
         type: "list",
         name: "action",
@@ -23,13 +23,13 @@ function operation() {
     .then((answer) => {
       const action = answer.action;
       if (action === "Criar conta") {
-        criarConta();
+        createAccount();
       } else if (action === "Consultar saldo") {
-        saldo();
+        checkBalance();
       } else if (action === "Depositar") {
-        depositar();
+        deposit();
       } else if (action === "Sacar") {
-        sacar();
+        withdraw();
       } else {
         console.log(chalk.blue("Encerrando o sistema..."));
         process.exit();
@@ -38,7 +38,7 @@ function operation() {
     .catch((err) => console.log(err));
 }
 
-function criarConta() {
+function createAccount() {
   inquirer
     .prompt([
       {
@@ -55,23 +55,23 @@ function criarConta() {
 
       if (!accountName) {
         console.log(chalk.red("Nome inválido, tente novamente."));
-        criarConta();
+        createAccount();
         return;
       }
 
-      const caminho = `accounts/${accountName}.json`;
+      const accountPath = `accounts/${accountName}.json`;
 
-      if (fs.existsSync(caminho)) {
+      if (fs.existsSync(accountPath)) {
         console.log(chalk.yellow("O Usuário já existe!"));
-        criarConta();
+        createAccount();
         return;
       }
 
-      const data = {
-        saldo: 0,
+      const accountData = {
+        balance: 0,
       };
 
-      fs.writeFileSync(caminho, JSON.stringify(data, null, 2));
+      fs.writeFileSync(accountPath, JSON.stringify(accountData, null, 2));
       console.log(chalk.green(`Conta "${accountName}" criada com sucesso!`));
 
       operation();
@@ -80,15 +80,15 @@ function criarConta() {
 }
 
 function checkAccount(accountName) {
-  const caminho = `accounts/${accountName}.json`;
-  if (!fs.existsSync(caminho)) {
+  const accountPath = `accounts/${accountName}.json`;
+  if (!fs.existsSync(accountPath)) {
     console.log(chalk.red("Conta não existe!"));
     return false;
   }
   return true;
 }
 
-function saldo() {
+function checkBalance() {
   inquirer
     .prompt([
       {
@@ -104,15 +104,15 @@ function saldo() {
         return;
       }
 
-      const caminho = `accounts/${accountName}.json`;
+      const accountPath = `accounts/${accountName}.json`;
 
       try {
         const accountData = JSON.parse(
-          fs.readFileSync(caminho, { encoding: "utf-8" })
+          fs.readFileSync(accountPath, { encoding: "utf-8" })
         );
 
         console.log(
-          chalk.blue(`O saldo da conta ${accountName} é R$${accountData.saldo}`)
+          chalk.blue(`O saldo da conta ${accountName} é R$${accountData.balance}`)
         );
       } catch (err) {
         console.log(chalk.red("Erro ao ler saldo da conta:", err));
@@ -124,7 +124,7 @@ function saldo() {
 }
 
 
-function depositar() {
+function deposit() {
   inquirer
     .prompt([
       {
@@ -152,22 +152,22 @@ function depositar() {
 
           if (isNaN(amount) || amount <= 0) {
             console.log(
-              chalk.red("Valor inválido, digite um número positivo.")
+              chalk.red("Valor inválido.")
             );
-            depositar();
+            deposit();
             return;
           }
 
-          const caminho = `accounts/${accountName}.json`;
-          const accountData = JSON.parse(fs.readFileSync(caminho, "utf-8"));
+          const accountPath = `accounts/${accountName}.json`;
+          const accountData = JSON.parse(fs.readFileSync(accountPath, "utf-8"));
 
-          accountData.saldo += amount;
+          accountData.balance += amount;
 
-          fs.writeFileSync(caminho, JSON.stringify(accountData, null, 2));
+          fs.writeFileSync(accountPath, JSON.stringify(accountData, null, 2));
 
           console.log(
             chalk.green(
-              `Depósito de R$${amount} realizado com sucesso! Novo saldo: R$${accountData.saldo}`
+              `Depósito de R$${amount} realizado com sucesso! Novo saldo: R$${accountData.balance}`
             )
           );
 
@@ -178,7 +178,7 @@ function depositar() {
     .catch((err) => console.log(err));
 }
 
-function sacar() {
+function withdraw() {
   inquirer
     .prompt([
       {
@@ -194,11 +194,11 @@ function sacar() {
         return;
       }
 
-      const caminho = `accounts/${accountName}.json`;
-      const accountData = JSON.parse(fs.readFileSync(caminho, "utf-8"));
-      const saldoAtual = accountData.saldo;
+      const accountPath = `accounts/${accountName}.json`;
+      const accountData = JSON.parse(fs.readFileSync(accountPath, "utf-8"));
+      const currentBalance = accountData.balance;
 
-      console.log(chalk.blue(`O saldo da sua conta é R$${saldoAtual}`));
+      console.log(chalk.blue(`O saldo da sua conta é R$${currentBalance}`));
 
       inquirer
         .prompt([
@@ -208,28 +208,28 @@ function sacar() {
           },
         ])
         .then((answer) => {
-          const saque = parseFloat(answer.amount);
+          const withdrawalAmount = parseFloat(answer.amount);
 
-          if (isNaN(saque) || saque <= 0) {
+          if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
             console.log(chalk.red("Valor inválido para saque."));
             operation();
             return;
           }
 
-          if (saque > saldoAtual) {
+          if (withdrawalAmount > currentBalance) {
             console.log(chalk.red("Saldo insuficiente."));
             operation();
             return;
           }
 
-          accountData.saldo -= saque;
+          accountData.balance -= withdrawalAmount;
 
-          fs.writeFileSync(caminho, JSON.stringify(accountData, null, 2));
+          fs.writeFileSync(accountPath, JSON.stringify(accountData, null, 2));
 
           console.log(
-            chalk.green(`Saque de R$${saque} realizado com sucesso!`)
+            chalk.green(`Saque de R$${withdrawalAmount} realizado com sucesso!`)
           );
-          console.log(chalk.blue(`Novo saldo: R$${accountData.saldo}`));
+          console.log(chalk.blue(`Novo saldo: R$${accountData.balance}`));
 
           operation();
         });
